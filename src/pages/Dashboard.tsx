@@ -69,7 +69,7 @@ const Dashboard = () => {
             </div>
             <div>
               <h1 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
-                SENTINEL
+                MedTrack
                 <span className="text-xs font-mono text-primary bg-primary/10 px-2 py-0.5 rounded">v3.0</span>
               </h1>
               <p className="text-[10px] font-mono text-muted-foreground tracking-wider uppercase">
