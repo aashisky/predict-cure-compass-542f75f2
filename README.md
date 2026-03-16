@@ -6,7 +6,7 @@ MedTek (Predict Cure Compass) is a single-page application (SPA) for epidemiolog
 
 ## Project URL
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+**URL**: https://predict-cure-compass.lovable.app
 
 # Architecture
 
