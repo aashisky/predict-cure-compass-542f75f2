@@ -247,7 +247,7 @@ const Dashboard = () => {
         {/* Footer */}
         <footer className="text-center py-4 border-t border-border">
           <p className="text-[10px] font-mono text-muted-foreground">
-            SENTINEL v3.0 • {diseases.length} diseases tracked across {regions.length} WHO regions •
+            MedTrack v3.0 • {diseases.length} diseases tracked across {regions.length} WHO regions •
             Predictive model: Modified SIR with exponential smoothing •
             Last sync: {currentTime.toISOString().split('T')[0]}
           </p>
