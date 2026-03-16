@@ -1,4 +1,20 @@
 // WHO-style disease surveillance mock data — expanded dataset
+export interface DemographicBreakdown {
+  male: number;   // percentage
+  female: number;
+  children: number; // 0-14
+  youth: number;    // 15-24
+  adult: number;    // 25-64
+  elderly: number;  // 65+
+}
+
+export interface CountryData {
+  country: string;
+  iso: string;
+  cases: number;
+  deaths: number;
+}
+
 export interface DiseaseData {
   id: string;
   name: string;
@@ -13,7 +29,9 @@ export interface DiseaseData {
   pathogen: 'virus' | 'bacteria' | 'parasite' | 'fungus' | 'prion';
   transmission: string;
   vaccineAvailable: boolean;
-  incubationDays: [number, number]; // min, max
+  incubationDays: [number, number];
+  demographics: DemographicBreakdown;
+  topCountries: CountryData[];
 }
 
 export interface TimeSeriesPoint {
