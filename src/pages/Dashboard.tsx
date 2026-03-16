@@ -1,29 +1,61 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
   Activity, Shield, Globe, Bell, Cpu, Radio,
-  Biohazard, HeartPulse, Skull, Users
+  Biohazard, HeartPulse, Skull, Users, Dna, Clock, GitBranch, Grid3X3
 } from "lucide-react";
 import { MetricCard, DiseaseRow } from "@/components/dashboard/MetricCard";
 import { AlertFeed } from "@/components/dashboard/AlertFeed";
 import { RegionPanel } from "@/components/dashboard/RegionPanel";
 import { EpiCurveChart } from "@/components/dashboard/EpiCurveChart";
 import { PredictionEngine } from "@/components/dashboard/PredictionEngine";
+import { GenomicTracker } from "@/components/dashboard/GenomicTracker";
+import { DiseaseHeatmap } from "@/components/dashboard/DiseaseHeatmap";
+import { OutbreakTimeline } from "@/components/dashboard/OutbreakTimeline";
+import { CorrelationMatrix } from "@/components/dashboard/CorrelationMatrix";
+import { PathogenFilter } from "@/components/dashboard/PathogenFilter";
+import { DiseaseDetailPanel } from "@/components/dashboard/DiseaseDetailPanel";
 import { diseases, alerts, regions, formatNumber } from "@/data/diseaseData";
+
+type TabId = 'overview' | 'genomics' | 'predictions' | 'analytics';
+
+const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
+  { id: 'overview', label: 'Overview', icon: Activity },
+  { id: 'predictions', label: 'Predictions', icon: Cpu },
+  { id: 'genomics', label: 'Genomics', icon: Dna },
+  { id: 'analytics', label: 'Analytics', icon: Grid3X3 },
+];
 
 const Dashboard = () => {
   const [selectedDisease, setSelectedDisease] = useState(diseases[0]);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [activeTab, setActiveTab] = useState<TabId>('overview');
+  const [pathogenFilter, setPathogenFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
+  const pathogenCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    diseases.forEach(d => { counts[d.pathogen] = (counts[d.pathogen] || 0) + 1; });
+    return counts;
+  }, []);
+
+  const filteredDiseases = useMemo(() => {
+    let list = diseases;
+    if (pathogenFilter !== 'all') list = list.filter(d => d.pathogen === pathogenFilter);
+    if (searchQuery) list = list.filter(d => d.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    return list;
+  }, [pathogenFilter, searchQuery]);
+
   const totalCases = diseases.reduce((s, d) => s + d.cases, 0);
   const totalDeaths = diseases.reduce((s, d) => s + d.deaths, 0);
   const totalActive = diseases.reduce((s, d) => s + d.activeCases, 0);
   const criticalAlerts = alerts.filter(a => a.severity === 'critical').length;
+  const criticalDiseases = diseases.filter(d => d.riskLevel === 'critical').length;
 
   return (
     <div className="min-h-screen bg-background grid-bg">
@@ -38,7 +70,7 @@ const Dashboard = () => {
             <div>
               <h1 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
                 SENTINEL
-                <span className="text-xs font-mono text-primary bg-primary/10 px-2 py-0.5 rounded">v2.0</span>
+                <span className="text-xs font-mono text-primary bg-primary/10 px-2 py-0.5 rounded">v3.0</span>
               </h1>
               <p className="text-[10px] font-mono text-muted-foreground tracking-wider uppercase">
                 WHO Disease Surveillance Intelligence Platform
@@ -46,14 +78,35 @@ const Dashboard = () => {
             </div>
           </div>
 
+          {/* Tabs */}
+          <div className="hidden md:flex items-center gap-1 bg-muted/50 rounded-lg p-1 border border-border">
+            {tabs.map(tab => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-mono transition-colors ${
+                    activeTab === tab.id
+                      ? 'bg-primary/15 text-primary border border-primary/30'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Icon size={13} />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+
           <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center gap-2 text-xs font-mono text-muted-foreground">
+            <div className="hidden lg:flex items-center gap-2 text-xs font-mono text-muted-foreground">
               <Radio size={12} className="text-success animate-pulse-glow" />
-              LIVE DATA FEED
+              LIVE
             </div>
-            <div className="hidden md:flex items-center gap-2 text-xs font-mono text-muted-foreground">
+            <div className="hidden lg:flex items-center gap-2 text-xs font-mono text-muted-foreground">
               <Cpu size={12} className="text-primary" />
-              AI ENGINE ACTIVE
+              AI ACTIVE
             </div>
             <div className="flex items-center gap-2 px-3 py-1.5 bg-muted rounded-md border border-border">
               <Globe size={12} className="text-primary" />
@@ -75,98 +128,127 @@ const Dashboard = () => {
 
       <main className="max-w-[1800px] mx-auto p-4 space-y-4">
         {/* Top metrics */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <MetricCard
-            title="Global Cases"
-            value={totalCases}
-            subtitle="All tracked diseases"
-            riskLevel="moderate"
-            icon={<Biohazard size={80} />}
-            delay={0}
-          />
-          <MetricCard
-            title="Active Cases"
-            value={totalActive}
-            trend="rising"
-            subtitle="Currently infected"
-            riskLevel="high"
-            icon={<HeartPulse size={80} />}
-            delay={0.1}
-          />
-          <MetricCard
-            title="Global Deaths"
-            value={totalDeaths}
-            subtitle="Cumulative fatalities"
-            riskLevel="critical"
-            icon={<Skull size={80} />}
-            delay={0.2}
-          />
-          <MetricCard
-            title="Diseases Tracked"
-            value={diseases.length}
-            subtitle={`${criticalAlerts} critical alerts active`}
-            riskLevel={criticalAlerts > 0 ? 'high' : 'low'}
-            icon={<Activity size={80} />}
-            delay={0.3}
-          />
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <MetricCard title="Global Cases" value={totalCases} subtitle="All tracked diseases" riskLevel="moderate" icon={<Biohazard size={80} />} delay={0} />
+          <MetricCard title="Active Cases" value={totalActive} trend="rising" subtitle="Currently infected" riskLevel="high" icon={<HeartPulse size={80} />} delay={0.05} />
+          <MetricCard title="Global Deaths" value={totalDeaths} subtitle="Cumulative fatalities" riskLevel="critical" icon={<Skull size={80} />} delay={0.1} />
+          <MetricCard title="Diseases Tracked" value={diseases.length} subtitle={`${criticalDiseases} critical-risk pathogens`} riskLevel={criticalDiseases > 3 ? 'high' : 'moderate'} icon={<Activity size={80} />} delay={0.15} />
+          <MetricCard title="Active Alerts" value={alerts.length} subtitle={`${criticalAlerts} critical severity`} riskLevel={criticalAlerts > 2 ? 'critical' : 'high'} icon={<Bell size={80} />} delay={0.2} />
         </div>
 
-        {/* Main grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          {/* Left sidebar - Disease list */}
-          <div className="lg:col-span-2">
-            <div className="rounded-lg border border-border bg-card p-3">
-              <h2 className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
-                <Biohazard size={12} className="text-primary" />
-                Diseases
-              </h2>
-              <div className="space-y-1">
-                {diseases.map(d => (
-                  <DiseaseRow
-                    key={d.id}
-                    disease={d}
-                    isSelected={selectedDisease.id === d.id}
-                    onClick={() => setSelectedDisease(d)}
-                  />
-                ))}
+        {/* Mobile tab selector */}
+        <div className="flex md:hidden overflow-x-auto gap-1 bg-muted/50 rounded-lg p-1 border border-border">
+          {tabs.map(tab => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-mono whitespace-nowrap transition-colors ${
+                  activeTab === tab.id
+                    ? 'bg-primary/15 text-primary border border-primary/30'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Icon size={13} />
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* TAB: OVERVIEW */}
+        {activeTab === 'overview' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            {/* Left sidebar - Disease list */}
+            <div className="lg:col-span-3">
+              <div className="rounded-lg border border-border bg-card p-3">
+                <h2 className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                  <Biohazard size={12} className="text-primary" />
+                  Disease Registry ({filteredDiseases.length})
+                </h2>
+                {/* Search */}
+                <input
+                  type="text"
+                  placeholder="Search diseases..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-muted border border-border rounded-md px-3 py-1.5 text-xs font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary mb-2"
+                />
+                <PathogenFilter selected={pathogenFilter} onChange={setPathogenFilter} counts={pathogenCounts} />
+                <div className="space-y-1 max-h-[500px] overflow-y-auto pr-1">
+                  {filteredDiseases.map(d => (
+                    <DiseaseRow
+                      key={d.id}
+                      disease={d}
+                      isSelected={selectedDisease.id === d.id}
+                      onClick={() => setSelectedDisease(d)}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Center */}
+            <div className="lg:col-span-6 space-y-4">
+              <DiseaseDetailPanel disease={selectedDisease} />
+              <div className="rounded-lg border border-border bg-card p-4">
+                <EpiCurveChart diseaseId={selectedDisease.id} diseaseName={selectedDisease.name} />
+              </div>
+            </div>
+
+            {/* Right sidebar */}
+            <div className="lg:col-span-3 space-y-4">
+              <div className="rounded-lg border border-border bg-card p-3">
+                <h2 className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+                  <Bell size={12} className="text-warning" />
+                  Alert Feed ({alerts.length})
+                </h2>
+                <AlertFeed alerts={alerts} />
+              </div>
+              <div className="rounded-lg border border-border bg-card p-3">
+                <h2 className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+                  <Globe size={12} className="text-primary" />
+                  WHO Regions — Risk Index
+                </h2>
+                <RegionPanel regions={regions} />
               </div>
             </div>
           </div>
+        )}
 
-          {/* Center - Charts */}
-          <div className="lg:col-span-7 space-y-4">
-            <div className="rounded-lg border border-border bg-card p-4">
-              <EpiCurveChart diseaseId={selectedDisease.id} diseaseName={selectedDisease.name} />
-            </div>
+        {/* TAB: PREDICTIONS */}
+        {activeTab === 'predictions' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <PredictionEngine />
+            <OutbreakTimeline />
           </div>
+        )}
 
-          {/* Right sidebar */}
-          <div className="lg:col-span-3 space-y-4">
-            {/* Alerts */}
-            <div className="rounded-lg border border-border bg-card p-3">
-              <h2 className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
-                <Bell size={12} className="text-warning" />
-                Alert Feed
-              </h2>
-              <AlertFeed alerts={alerts} />
-            </div>
+        {/* TAB: GENOMICS */}
+        {activeTab === 'genomics' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <GenomicTracker />
+            <CorrelationMatrix />
+          </div>
+        )}
 
-            {/* Regions */}
-            <div className="rounded-lg border border-border bg-card p-3">
-              <h2 className="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
-                <Globe size={12} className="text-primary" />
-                WHO Regions — Risk Index
-              </h2>
-              <RegionPanel regions={regions} />
+        {/* TAB: ANALYTICS */}
+        {activeTab === 'analytics' && (
+          <div className="space-y-4">
+            <DiseaseHeatmap />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <OutbreakTimeline />
+              <CorrelationMatrix />
             </div>
           </div>
-        </div>
+        )}
 
         {/* Footer */}
         <footer className="text-center py-4 border-t border-border">
           <p className="text-[10px] font-mono text-muted-foreground">
-            SENTINEL v2.0 • Data sourced from WHO EIOS, IHR, & GIS platforms • Predictive model: Modified SIR with exponential smoothing •
+            SENTINEL v3.0 • {diseases.length} diseases tracked across {regions.length} WHO regions •
+            Predictive model: Modified SIR with exponential smoothing •
             Last sync: {currentTime.toISOString().split('T')[0]}
           </p>
         </footer>
