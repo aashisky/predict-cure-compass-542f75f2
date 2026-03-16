@@ -114,13 +114,15 @@ const Dashboard = () => {
         <div className="max-w-[1800px] mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <Shield className="text-primary" size={28} />
+              <Shield className="text-primary" size={32} />
               <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-success rounded-full animate-pulse-glow" />
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
-                MedTrack
-                <span className="text-xs font-mono text-primary bg-primary/10 px-2 py-0.5 rounded">v3.0</span>
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight text-foreground flex items-center gap-2">
+                <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  MedTrack
+                </span>
+                <span className="text-[10px] font-mono font-normal text-primary bg-primary/10 px-2 py-0.5 rounded">v3.0</span>
               </h1>
               <p className="text-[10px] font-mono text-muted-foreground tracking-wider uppercase">
                 WHO Disease Surveillance Intelligence Platform
