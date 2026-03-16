@@ -21,6 +21,54 @@ MedTek (Predict Cure Compass) is a single-page application (SPA) for epidemiolog
 | Forms | React Hook Form + Zod |
 | Testing | Vitest + Testing Library + Playwright |
 
+## Project Structure
+
+```
+src/
+├── pages/            # Route-level components
+│   ├── Index.tsx     # Landing page (renders Dashboard)
+│   ├── Dashboard.tsx # Main surveillance hub with 4 tabs
+│   └── NotFound.tsx  # 404 catch-all
+├── components/
+│   ├── dashboard/    # Domain-specific feature components
+│   │   ├── MetricCard, AlertFeed, RegionPanel
+│   │   ├── DiseaseHeatmap, EpiCurveChart, OutbreakTimeline
+│   │   ├── PredictionEngine, GenomicTracker, CorrelationMatrix
+│   │   ├── PathogenFilter, AdvancedFilters, DiseaseDetailPanel
+│   │   └── ...
+│   ├── ui/           # Reusable shadcn/ui primitives (30+)
+│   └── NavLink.tsx   # Navigation helper
+├── data/
+│   └── diseaseData.ts  # Static mock data + TypeScript interfaces
+├── hooks/            # Custom React hooks
+├── lib/
+│   └── utils.ts      # Shared utilities (cn helper)
+└── test/             # Test setup and specs
+```
+
+## Routing
+
+All routes are defined in `App.tsx`:
+
+- `/` — Index page (renders the Dashboard)
+- `*` — NotFound (404 catch-all)
+
+The provider stack wraps the router: `QueryClientProvider` → `TooltipProvider` → `BrowserRouter`.
+
+## Data Flow
+
+- **Static mock data** in `src/data/diseaseData.ts` with typed interfaces (`DiseaseData`, `CountryData`, `DemographicBreakdown`).
+- **Client-side filtering** — all filtering (pathogen type, risk level, region, demographics) is handled via React component state and `useMemo`.
+- **React Query** is configured for future API integration.
+
+## Dashboard Tabs
+
+| Tab | Purpose |
+|-----|---------|
+| Overview | Real-time disease metrics, alerts, regional data |
+| Predictions | AI-powered outbreak forecasting |
+| Genomics | Pathogen genomic sequence tracking |
+| Analytics | Correlation analysis and trend visualization |
 ## Project URL
 
 **URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
