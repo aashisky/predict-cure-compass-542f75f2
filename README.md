@@ -4,6 +4,10 @@
 
 MedTek (Predict Cure Compass) is a single-page application (SPA) for epidemiological disease surveillance. It provides real-time metrics, AI-powered outbreak predictions, genomic tracking, and correlation analytics through an interactive dashboard.
 
+## Project URL
+
+**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+
 # Architecture
 
 ## Tech Stack
@@ -69,9 +73,12 @@ The provider stack wraps the router: `QueryClientProvider` → `TooltipProvider`
 | Predictions | AI-powered outbreak forecasting |
 | Genomics | Pathogen genomic sequence tracking |
 | Analytics | Correlation analysis and trend visualization |
-## Project URL
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Styling
+
+- Tailwind CSS with custom HSL color variables (dark navy background, cyan primary, amber accent)
+- Fonts: Inter (UI) + JetBrains Mono (code)
+- Dark mode enabled by default via CSS variables and `next-themes`
 
 ## How can I edit this code?
 
