@@ -15,7 +15,8 @@ import { OutbreakTimeline } from "@/components/dashboard/OutbreakTimeline";
 import { CorrelationMatrix } from "@/components/dashboard/CorrelationMatrix";
 import { PathogenFilter } from "@/components/dashboard/PathogenFilter";
 import { DiseaseDetailPanel } from "@/components/dashboard/DiseaseDetailPanel";
-import { diseases, alerts, regions, formatNumber } from "@/data/diseaseData";
+import { AdvancedFilters } from "@/components/dashboard/AdvancedFilters";
+import { diseases, alerts, regions, formatNumber, getDemographics, getTopCountries } from "@/data/diseaseData";
 
 type TabId = 'overview' | 'genomics' | 'predictions' | 'analytics';
 
@@ -32,6 +33,14 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [pathogenFilter, setPathogenFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Advanced filters
+  const [sexFilter, setSexFilter] = useState('all');
+  const [ageGroupFilter, setAgeGroupFilter] = useState('all');
+  const [countryFilter, setCountryFilter] = useState('all');
+  const [riskFilter, setRiskFilter] = useState('all');
+  const [transmissionFilter, setTransmissionFilter] = useState('all');
+  const [vaccineFilter, setVaccineFilter] = useState('all');
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -44,12 +53,53 @@ const Dashboard = () => {
     return counts;
   }, []);
 
+  const availableCountries = useMemo(() => {
+    const countries = new Set<string>();
+    diseases.forEach(d => getTopCountries(d).forEach(c => countries.add(c.country)));
+    return Array.from(countries).sort();
+  }, []);
+
+  const availableTransmissions = useMemo(() => {
+    const set = new Set<string>();
+    diseases.forEach(d => {
+      d.transmission.split(' / ').forEach(t => set.add(t.trim()));
+    });
+    return Array.from(set).sort();
+  }, []);
+
+  const activeFilterCount = [sexFilter, ageGroupFilter, countryFilter, riskFilter, transmissionFilter, vaccineFilter]
+    .filter(f => f !== 'all').length;
+
+  const clearAllFilters = () => {
+    setSexFilter('all'); setAgeGroupFilter('all'); setCountryFilter('all');
+    setRiskFilter('all'); setTransmissionFilter('all'); setVaccineFilter('all');
+  };
+
   const filteredDiseases = useMemo(() => {
     let list = diseases;
     if (pathogenFilter !== 'all') list = list.filter(d => d.pathogen === pathogenFilter);
     if (searchQuery) list = list.filter(d => d.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    if (riskFilter !== 'all') list = list.filter(d => d.riskLevel === riskFilter);
+    if (vaccineFilter !== 'all') list = list.filter(d => vaccineFilter === 'yes' ? d.vaccineAvailable : !d.vaccineAvailable);
+    if (transmissionFilter !== 'all') list = list.filter(d => d.transmission.includes(transmissionFilter));
+    if (sexFilter !== 'all') {
+      list = list.filter(d => {
+        const demo = getDemographics(d);
+        return sexFilter === 'male' ? demo.male > 55 : demo.female > 55;
+      });
+    }
+    if (ageGroupFilter !== 'all') {
+      list = list.filter(d => {
+        const demo = getDemographics(d);
+        const ageKey = ageGroupFilter as keyof typeof demo;
+        return (demo[ageKey] as number) >= 25;
+      });
+    }
+    if (countryFilter !== 'all') {
+      list = list.filter(d => getTopCountries(d).some(c => c.country === countryFilter));
+    }
     return list;
-  }, [pathogenFilter, searchQuery]);
+  }, [pathogenFilter, searchQuery, sexFilter, ageGroupFilter, countryFilter, riskFilter, transmissionFilter, vaccineFilter]);
 
   const totalCases = diseases.reduce((s, d) => s + d.cases, 0);
   const totalDeaths = diseases.reduce((s, d) => s + d.deaths, 0);
