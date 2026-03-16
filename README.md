@@ -48,7 +48,7 @@ src/
 │   ├── ui/           # Reusable shadcn/ui primitives (30+)
 │   └── NavLink.tsx   # Navigation helper
 ├── data/
-│   └── diseaseData.ts  # Static mock data + TypeScript interfaces
+│   └── diseaseData.ts, diseaseDataWHOAPI.ts   # Static mock data, WHO API + TypeScript interfaces
 ├── hooks/            # Custom React hooks
 ├── lib/
 │   └── utils.ts      # Shared utilities (cn helper)
