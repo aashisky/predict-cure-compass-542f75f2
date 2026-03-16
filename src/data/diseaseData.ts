@@ -1,4 +1,20 @@
 // WHO-style disease surveillance mock data — expanded dataset
+export interface DemographicBreakdown {
+  male: number;   // percentage
+  female: number;
+  children: number; // 0-14
+  youth: number;    // 15-24
+  adult: number;    // 25-64
+  elderly: number;  // 65+
+}
+
+export interface CountryData {
+  country: string;
+  iso: string;
+  cases: number;
+  deaths: number;
+}
+
 export interface DiseaseData {
   id: string;
   name: string;
@@ -13,8 +29,84 @@ export interface DiseaseData {
   pathogen: 'virus' | 'bacteria' | 'parasite' | 'fungus' | 'prion';
   transmission: string;
   vaccineAvailable: boolean;
-  incubationDays: [number, number]; // min, max
+  incubationDays: [number, number];
 }
+
+// Deterministic hash for consistent demographic generation
+const hashStr = (s: string): number => {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+};
+
+const countryPool = [
+  'United States', 'India', 'Brazil', 'China', 'Indonesia', 'Nigeria', 'Pakistan',
+  'Bangladesh', 'Russia', 'Mexico', 'Japan', 'Ethiopia', 'Philippines', 'Egypt',
+  'DR Congo', 'Germany', 'Turkey', 'France', 'United Kingdom', 'Thailand',
+  'South Africa', 'Tanzania', 'Kenya', 'Colombia', 'Argentina', 'Sudan',
+  'Uganda', 'Iraq', 'Afghanistan', 'Morocco', 'Saudi Arabia', 'Peru',
+  'Angola', 'Ghana', 'Mozambique', 'Yemen', 'Nepal', 'Venezuela',
+  'Madagascar', 'Cameroon', 'Australia', 'Niger', 'Mali', 'Malawi',
+  'Cambodia', 'Senegal', 'Chad', 'Guinea', 'Rwanda', 'Haiti',
+];
+
+export const getDemographics = (disease: DiseaseData): DemographicBreakdown => {
+  const h = hashStr(disease.id);
+  // Sex split varies by disease type
+  const maleBase = disease.transmission.includes('Sexual') ? 58 :
+                   disease.transmission.includes('Zoonotic') ? 62 :
+                   disease.transmission.includes('Vertical') ? 35 : 50;
+  const male = Math.min(80, Math.max(20, maleBase + (h % 15) - 7));
+  const female = 100 - male;
+
+  // Age distribution varies
+  const isChildhood = disease.name.includes('Measles') || disease.name.includes('Rotavirus') || disease.name.includes('Chickenpox') || disease.name.includes('HFMD');
+  const isElderly = disease.name.includes('Prion') || disease.name.includes('Alzheimer') || disease.cfr > 30;
+
+  let children = isChildhood ? 45 + (h % 15) : 8 + (h % 12);
+  let elderly = isElderly ? 35 + (h % 15) : 5 + (h % 10);
+  let youth = 10 + (h % 8);
+  let adult = 100 - children - elderly - youth;
+  if (adult < 10) { adult = 25; children = Math.round((100 - adult - youth - elderly)); }
+
+  return { male, female, children, youth, adult, elderly };
+};
+
+export const getTopCountries = (disease: DiseaseData): CountryData[] => {
+  const h = hashStr(disease.id);
+  const regionMap: Record<string, string[]> = {
+    'Africa': ['Nigeria', 'DR Congo', 'South Africa', 'Ethiopia', 'Kenya', 'Tanzania', 'Uganda', 'Mozambique', 'Ghana', 'Cameroon'],
+    'Americas': ['United States', 'Brazil', 'Mexico', 'Colombia', 'Argentina', 'Peru', 'Venezuela', 'Haiti'],
+    'South-East Asia': ['India', 'Indonesia', 'Bangladesh', 'Thailand', 'Nepal', 'Cambodia'],
+    'Europe': ['Germany', 'France', 'United Kingdom', 'Russia', 'Turkey'],
+    'Eastern Mediterranean': ['Pakistan', 'Egypt', 'Iraq', 'Afghanistan', 'Saudi Arabia', 'Yemen', 'Morocco', 'Sudan'],
+    'Western Pacific': ['China', 'Japan', 'Philippines', 'Australia', 'Cambodia'],
+    'Global': countryPool.slice(0, 15),
+  };
+
+  const pool = regionMap[disease.region] || countryPool.slice(0, 10);
+  const selected: CountryData[] = [];
+  const totalCases = disease.cases;
+
+  for (let i = 0; i < Math.min(6, pool.length); i++) {
+    const idx = (h + i * 7) % pool.length;
+    const share = (0.35 - i * 0.05) * (0.8 + ((h + i) % 40) / 100);
+    selected.push({
+      country: pool[idx],
+      iso: pool[idx].slice(0, 2).toUpperCase(),
+      cases: Math.round(totalCases * Math.max(0.02, share)),
+      deaths: Math.round(totalCases * Math.max(0.02, share) * (disease.cfr / 100)),
+    });
+  }
+
+  // Deduplicate
+  const seen = new Set<string>();
+  return selected.filter(c => {
+    if (seen.has(c.country)) return false;
+    seen.add(c.country);
+    return true;
+  });
+};
 
 export interface TimeSeriesPoint {
   date: string;

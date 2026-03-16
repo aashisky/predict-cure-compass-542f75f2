@@ -15,7 +15,8 @@ import { OutbreakTimeline } from "@/components/dashboard/OutbreakTimeline";
 import { CorrelationMatrix } from "@/components/dashboard/CorrelationMatrix";
 import { PathogenFilter } from "@/components/dashboard/PathogenFilter";
 import { DiseaseDetailPanel } from "@/components/dashboard/DiseaseDetailPanel";
-import { diseases, alerts, regions, formatNumber } from "@/data/diseaseData";
+import { AdvancedFilters } from "@/components/dashboard/AdvancedFilters";
+import { diseases, alerts, regions, formatNumber, getDemographics, getTopCountries } from "@/data/diseaseData";
 
 type TabId = 'overview' | 'genomics' | 'predictions' | 'analytics';
 
@@ -32,6 +33,14 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [pathogenFilter, setPathogenFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Advanced filters
+  const [sexFilter, setSexFilter] = useState('all');
+  const [ageGroupFilter, setAgeGroupFilter] = useState('all');
+  const [countryFilter, setCountryFilter] = useState('all');
+  const [riskFilter, setRiskFilter] = useState('all');
+  const [transmissionFilter, setTransmissionFilter] = useState('all');
+  const [vaccineFilter, setVaccineFilter] = useState('all');
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -44,12 +53,53 @@ const Dashboard = () => {
     return counts;
   }, []);
 
+  const availableCountries = useMemo(() => {
+    const countries = new Set<string>();
+    diseases.forEach(d => getTopCountries(d).forEach(c => countries.add(c.country)));
+    return Array.from(countries).sort();
+  }, []);
+
+  const availableTransmissions = useMemo(() => {
+    const set = new Set<string>();
+    diseases.forEach(d => {
+      d.transmission.split(' / ').forEach(t => set.add(t.trim()));
+    });
+    return Array.from(set).sort();
+  }, []);
+
+  const activeFilterCount = [sexFilter, ageGroupFilter, countryFilter, riskFilter, transmissionFilter, vaccineFilter]
+    .filter(f => f !== 'all').length;
+
+  const clearAllFilters = () => {
+    setSexFilter('all'); setAgeGroupFilter('all'); setCountryFilter('all');
+    setRiskFilter('all'); setTransmissionFilter('all'); setVaccineFilter('all');
+  };
+
   const filteredDiseases = useMemo(() => {
     let list = diseases;
     if (pathogenFilter !== 'all') list = list.filter(d => d.pathogen === pathogenFilter);
     if (searchQuery) list = list.filter(d => d.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    if (riskFilter !== 'all') list = list.filter(d => d.riskLevel === riskFilter);
+    if (vaccineFilter !== 'all') list = list.filter(d => vaccineFilter === 'yes' ? d.vaccineAvailable : !d.vaccineAvailable);
+    if (transmissionFilter !== 'all') list = list.filter(d => d.transmission.includes(transmissionFilter));
+    if (sexFilter !== 'all') {
+      list = list.filter(d => {
+        const demo = getDemographics(d);
+        return sexFilter === 'male' ? demo.male > 55 : demo.female > 55;
+      });
+    }
+    if (ageGroupFilter !== 'all') {
+      list = list.filter(d => {
+        const demo = getDemographics(d);
+        const ageKey = ageGroupFilter as keyof typeof demo;
+        return (demo[ageKey] as number) >= 25;
+      });
+    }
+    if (countryFilter !== 'all') {
+      list = list.filter(d => getTopCountries(d).some(c => c.country === countryFilter));
+    }
     return list;
-  }, [pathogenFilter, searchQuery]);
+  }, [pathogenFilter, searchQuery, sexFilter, ageGroupFilter, countryFilter, riskFilter, transmissionFilter, vaccineFilter]);
 
   const totalCases = diseases.reduce((s, d) => s + d.cases, 0);
   const totalDeaths = diseases.reduce((s, d) => s + d.deaths, 0);
@@ -64,13 +114,15 @@ const Dashboard = () => {
         <div className="max-w-[1800px] mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative">
-              <Shield className="text-primary" size={28} />
+              <Shield className="text-primary" size={32} />
               <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-success rounded-full animate-pulse-glow" />
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
-                MedTrack
-                <span className="text-xs font-mono text-primary bg-primary/10 px-2 py-0.5 rounded">v3.0</span>
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight text-foreground flex items-center gap-2">
+                <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  MedTrack
+                </span>
+                <span className="text-[10px] font-mono font-normal text-primary bg-primary/10 px-2 py-0.5 rounded">v3.0</span>
               </h1>
               <p className="text-[10px] font-mono text-muted-foreground tracking-wider uppercase">
                 WHO Disease Surveillance Intelligence Platform
@@ -176,7 +228,19 @@ const Dashboard = () => {
                   className="w-full bg-muted border border-border rounded-md px-3 py-1.5 text-xs font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary mb-2"
                 />
                 <PathogenFilter selected={pathogenFilter} onChange={setPathogenFilter} counts={pathogenCounts} />
-                <div className="space-y-1 max-h-[500px] overflow-y-auto pr-1">
+                <AdvancedFilters
+                  sexFilter={sexFilter} onSexFilterChange={setSexFilter}
+                  ageGroupFilter={ageGroupFilter} onAgeGroupFilterChange={setAgeGroupFilter}
+                  countryFilter={countryFilter} onCountryFilterChange={setCountryFilter}
+                  riskFilter={riskFilter} onRiskFilterChange={setRiskFilter}
+                  transmissionFilter={transmissionFilter} onTransmissionFilterChange={setTransmissionFilter}
+                  vaccineFilter={vaccineFilter} onVaccineFilterChange={setVaccineFilter}
+                  availableCountries={availableCountries}
+                  availableTransmissions={availableTransmissions}
+                  onClearAll={clearAllFilters}
+                  activeCount={activeFilterCount}
+                />
+                <div className="space-y-1 max-h-[400px] overflow-y-auto pr-1">
                   {filteredDiseases.map(d => (
                     <DiseaseRow
                       key={d.id}
@@ -185,6 +249,9 @@ const Dashboard = () => {
                       onClick={() => setSelectedDisease(d)}
                     />
                   ))}
+                  {filteredDiseases.length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-4 font-mono">No diseases match filters</p>
+                  )}
                 </div>
               </div>
             </div>

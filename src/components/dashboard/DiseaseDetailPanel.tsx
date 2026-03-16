@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
-import { Shield, Syringe, Clock, Zap, Users, Skull } from "lucide-react";
-import { formatNumber, type DiseaseData } from "@/data/diseaseData";
+import { Shield, Syringe, Clock, Zap, Users, Skull, MapPin } from "lucide-react";
+import { formatNumber, type DiseaseData, getDemographics, getTopCountries } from "@/data/diseaseData";
 
 export const DiseaseDetailPanel = ({ disease }: { disease: DiseaseData }) => {
   const riskColorMap: Record<string, string> = {
@@ -17,6 +17,9 @@ export const DiseaseDetailPanel = ({ disease }: { disease: DiseaseData }) => {
     fungus: 'bg-accent/10 text-accent',
     prion: 'bg-muted text-muted-foreground',
   };
+
+  const demo = getDemographics(disease);
+  const countries = getTopCountries(disease);
 
   return (
     <motion.div
@@ -63,6 +66,61 @@ export const DiseaseDetailPanel = ({ disease }: { disease: DiseaseData }) => {
             <span className="text-[9px] font-mono text-muted-foreground">CFR</span>
           </div>
           <span className={`text-sm font-mono font-bold ${riskColorMap[disease.riskLevel]}`}>{disease.cfr}%</span>
+        </div>
+      </div>
+
+      {/* Demographics */}
+      <div className="p-2.5 rounded bg-muted/30 border border-border space-y-2">
+        <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground">Demographics</span>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <span className="text-[9px] font-mono text-muted-foreground">Sex Distribution</span>
+            <div className="flex items-center gap-1 mt-1">
+              <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden flex">
+                <div className="h-full bg-info rounded-l-full" style={{ width: `${demo.male}%` }} />
+                <div className="h-full bg-accent rounded-r-full" style={{ width: `${demo.female}%` }} />
+              </div>
+            </div>
+            <div className="flex justify-between mt-0.5">
+              <span className="text-[8px] font-mono text-info">♂ {demo.male}%</span>
+              <span className="text-[8px] font-mono text-accent">♀ {demo.female}%</span>
+            </div>
+          </div>
+          <div>
+            <span className="text-[9px] font-mono text-muted-foreground">Age Groups</span>
+            <div className="flex items-center gap-0.5 mt-1">
+              {[
+                { key: 'children', label: '0-14', color: 'bg-success', val: demo.children },
+                { key: 'youth', label: '15-24', color: 'bg-info', val: demo.youth },
+                { key: 'adult', label: '25-64', color: 'bg-primary', val: demo.adult },
+                { key: 'elderly', label: '65+', color: 'bg-warning', val: demo.elderly },
+              ].map(ag => (
+                <div key={ag.key} className={`h-2 ${ag.color} rounded-sm`} style={{ width: `${ag.val}%` }} title={`${ag.label}: ${ag.val}%`} />
+              ))}
+            </div>
+            <div className="flex justify-between mt-0.5">
+              <span className="text-[8px] font-mono text-success">0-14: {demo.children}%</span>
+              <span className="text-[8px] font-mono text-warning">65+: {demo.elderly}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Top Countries */}
+      <div className="space-y-1.5">
+        <span className="text-[9px] font-mono uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+          <MapPin size={9} /> Top Affected Countries
+        </span>
+        <div className="grid grid-cols-3 gap-1">
+          {countries.slice(0, 6).map((c, i) => (
+            <div key={c.country} className="flex items-center gap-1.5 px-2 py-1 rounded bg-muted/30 border border-border">
+              <span className="text-[9px] font-mono text-primary font-bold">#{i + 1}</span>
+              <div className="min-w-0 flex-1">
+                <span className="text-[9px] font-mono text-foreground truncate block">{c.country}</span>
+                <span className="text-[8px] font-mono text-muted-foreground">{formatNumber(c.cases)}</span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
