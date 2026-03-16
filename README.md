@@ -13,6 +13,8 @@ The application is structured around four core analytical modules—**Overview, 
 
 # Architecture
 
+**Browser (Single Page App)** → **API Layer**
+            
 ## Tech Stack
 
 | Layer | Technology |
