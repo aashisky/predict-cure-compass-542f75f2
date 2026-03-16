@@ -228,7 +228,19 @@ const Dashboard = () => {
                   className="w-full bg-muted border border-border rounded-md px-3 py-1.5 text-xs font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary mb-2"
                 />
                 <PathogenFilter selected={pathogenFilter} onChange={setPathogenFilter} counts={pathogenCounts} />
-                <div className="space-y-1 max-h-[500px] overflow-y-auto pr-1">
+                <AdvancedFilters
+                  sexFilter={sexFilter} onSexFilterChange={setSexFilter}
+                  ageGroupFilter={ageGroupFilter} onAgeGroupFilterChange={setAgeGroupFilter}
+                  countryFilter={countryFilter} onCountryFilterChange={setCountryFilter}
+                  riskFilter={riskFilter} onRiskFilterChange={setRiskFilter}
+                  transmissionFilter={transmissionFilter} onTransmissionFilterChange={setTransmissionFilter}
+                  vaccineFilter={vaccineFilter} onVaccineFilterChange={setVaccineFilter}
+                  availableCountries={availableCountries}
+                  availableTransmissions={availableTransmissions}
+                  onClearAll={clearAllFilters}
+                  activeCount={activeFilterCount}
+                />
+                <div className="space-y-1 max-h-[400px] overflow-y-auto pr-1">
                   {filteredDiseases.map(d => (
                     <DiseaseRow
                       key={d.id}
@@ -237,6 +249,9 @@ const Dashboard = () => {
                       onClick={() => setSelectedDisease(d)}
                     />
                   ))}
+                  {filteredDiseases.length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-4 font-mono">No diseases match filters</p>
+                  )}
                 </div>
               </div>
             </div>
