@@ -1,6 +1,27 @@
 ## Welcome to MedTrack
 
-## Project info
+## Overview
+
+MedTek (Predict Cure Compass) is a single-page application (SPA) for epidemiological disease surveillance. It provides real-time metrics, AI-powered outbreak predictions, genomic tracking, and correlation analytics through an interactive dashboard.
+
+# Architecture
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Framework | React 18 + TypeScript |
+| Routing | React Router 6 (BrowserRouter) |
+| Build | Vite 5 with SWC |
+| Styling | Tailwind CSS 3 (dark mode by default) |
+| UI Components | shadcn/ui (Radix primitives) |
+| Charts | Recharts |
+| Animations | Framer Motion |
+| Server State | TanStack React Query |
+| Forms | React Hook Form + Zod |
+| Testing | Vitest + Testing Library + Playwright |
+
+## Project URL
 
 **URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
 
