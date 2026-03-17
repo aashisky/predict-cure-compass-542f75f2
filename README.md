@@ -1,7 +1,7 @@
 ## Welcome to MedTrack
 
 ## Overview
-**MedTek (Predict Cure Compass)** is an interactive **disease surveillance dashboard** designed to integrate real-time and historical public health data into a unified analytical platform. Built as a **single-page application (SPA)** using **React 18, TypeScript, and Vite**, the system enables users to monitor global disease trends through an intuitive and visually rich interface. 
+**MedTek (Predict Cure Compass)** is an interactive **disease surveillance dashboard** designed to integrate real-time and historical public health data into a unified analytical platform. Built as a **single-page application (SPA)** using **React 18, TypeScript, and Vite**, the system enables users to monitor global disease trends through an intuitive and visually rich interface. This project has been done with vibe coding.
 
 The dashboard provides **real-time epidemiological metrics, AI-driven outbreak predictions, genomic sequence tracking, and correlation analytics**, helping public health stakeholders quickly identify patterns and emerging threats. Data is presented through interactive charts, heatmaps, and timelines powered by **Recharts and Framer Motion**, while **TanStack React Query** prepares the platform for seamless future API integrations with public health surveillance sources. 
 
